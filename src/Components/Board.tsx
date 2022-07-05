@@ -1,6 +1,10 @@
 import { Droppable } from "react-beautiful-dnd";
 import DraggableCard from "./DraggableCard";
 import styled from "styled-components";
+import { useForm } from "react-hook-form";
+import { ITodo, IToDoState, toDoState } from "../atom";
+import { useRecoilState, useSetRecoilState } from "recoil";
+import { useEffect } from "react";
 
 const Wrapper = styled.div`
   padding-top: 10px;
@@ -35,15 +39,50 @@ const Area = styled.div<IArea>`
   transition: background-color 0.3s ease-in-out;
 `;
 
+const Form = styled.form`
+  width: 100%;
+  input {
+    width: 100%;
+  }
+`;
+
 interface IBoardProps {
-  toDos: string[];
+  toDos: ITodo[];
   boardId: string;
 }
 
+interface IFrom {
+  toDo: string;
+}
+
 function Board({ toDos, boardId }: IBoardProps) {
+  const [allToDos, setToDos] = useRecoilState<IToDoState>(toDoState);
+  const { register, setValue, handleSubmit } = useForm<IFrom>();
+  const onValid = ({ toDo }: IFrom) => {
+    const newToDo = {
+      id: Date.now(),
+      text: toDo,
+    };
+    setToDos((allBoards) => {
+      const newBoards = {
+        ...allBoards,
+        [boardId]: [...allBoards[boardId], newToDo],
+      };
+      localStorage.setItem("localList", JSON.stringify(newBoards));
+      return newBoards;
+    });
+    setValue("toDo", "");
+  };
   return (
     <Wrapper>
       <Title>{boardId}</Title>
+      <Form onSubmit={handleSubmit(onValid)}>
+        <input
+          {...register("toDo", { required: true })}
+          type="text"
+          placeholder={`Add task on ${boardId}`}
+        />
+      </Form>
       <Droppable droppableId={boardId}>
         {(magic, snapshot) => (
           <Area
@@ -53,7 +92,12 @@ function Board({ toDos, boardId }: IBoardProps) {
             {...magic.droppableProps}
           >
             {toDos.map((toDo, index) => (
-              <DraggableCard key={toDo} toDo={toDo} index={index} />
+              <DraggableCard
+                key={toDo.id}
+                toDoId={toDo.id}
+                toDoText={toDo.text}
+                index={index}
+              />
             ))}
             {magic.placeholder}
           </Area>
