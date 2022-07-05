@@ -28,23 +28,24 @@ const Boards = styled.div`
 
 const DeleteArea = styled.div<{
   dragging: boolean;
-  isdraggingFromThisWith: boolean;
+  isDraggingOver: boolean;
 }>`
   position: absolute;
   bottom: 250px;
   background-color: rgba(0, 0, 0, 0.3);
-  padding: ${(props) =>
-    props.isdraggingFromThisWith ? "20px 50px" : "10px 50px"};
+  padding: 10px 50px;
+  transform: ${(props) => (props.isDraggingOver ? "scale(1.5)" : "scale(1)")};
+  transition: all 0.1s ease-in;
   border-radius: 15px;
-  display: ${(props) => (props.dragging ? "block" : "none")};
+  opacity: ${(props) => (props.dragging ? "1" : "0")};
 `;
 
 function App() {
   const [dragging, setDragging] = useRecoilState(draggingState);
   const [toDos, setToDos] = useRecoilState(toDoState);
-  console.log(toDos);
   const onDrangEnd = (info: DropResult) => {
     const { destination, source, draggableId } = info;
+    setDragging(false);
     if (!destination) return;
     if (destination?.droppableId === "delete") {
       setToDos((allBoards) => {
@@ -73,8 +74,10 @@ function App() {
         return newBoards;
       });
     }
-
-    if (destination.droppableId !== source.droppableId) {
+    if (
+      destination.droppableId !== source.droppableId &&
+      destination.droppableId !== "delete"
+    ) {
       setToDos((allBoards) => {
         const sourceBoard = [...allBoards[source.droppableId]];
         const taskObj = sourceBoard[source.index];
@@ -90,8 +93,6 @@ function App() {
         return newBoards;
       });
     }
-
-    setDragging(false);
   };
   const onDragStart = (info: DragStart) => {
     setDragging(true);
@@ -110,7 +111,7 @@ function App() {
             <DeleteArea
               ref={magic.innerRef}
               {...magic.droppableProps}
-              isdraggingFromThisWith={Boolean(snapshot.draggingFromThisWith)}
+              isDraggingOver={snapshot.isDraggingOver}
               dragging={dragging}
             >
               x
