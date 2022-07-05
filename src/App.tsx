@@ -45,8 +45,19 @@ function App() {
   console.log(toDos);
   const onDrangEnd = (info: DropResult) => {
     const { destination, source, draggableId } = info;
-
     if (!destination) return;
+    if (destination?.droppableId === "delete") {
+      setToDos((allBoards) => {
+        const sourceBoard = [...allBoards[source.droppableId]];
+        sourceBoard.splice(source.index, 1);
+        const newBoards = {
+          ...allBoards,
+          [source.droppableId]: sourceBoard,
+        };
+        localStorage.setItem("localList", JSON.stringify(newBoards));
+        return newBoards;
+      });
+    }
     if (destination?.droppableId === source.droppableId) {
       // Same Board Moving
       setToDos((allBoards) => {
@@ -62,19 +73,8 @@ function App() {
         return newBoards;
       });
     }
-    if (destination?.droppableId === "delete") {
-      setToDos((allBoards) => {
-        const sourceBoard = [...allBoards[source.droppableId]];
-        sourceBoard.splice(source.index, 1);
-        const newBoards = {
-          ...allBoards,
-          [source.droppableId]: sourceBoard,
-        };
-        localStorage.setItem("localList", JSON.stringify(newBoards));
-        return newBoards;
-      });
-    }
-    if (destination.droppableId !== "delete" && source.droppableId) {
+
+    if (destination.droppableId !== source.droppableId) {
       setToDos((allBoards) => {
         const sourceBoard = [...allBoards[source.droppableId]];
         const taskObj = sourceBoard[source.index];
@@ -90,6 +90,7 @@ function App() {
         return newBoards;
       });
     }
+
     setDragging(false);
   };
   const onDragStart = (info: DragStart) => {
