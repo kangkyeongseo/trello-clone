@@ -44,6 +44,7 @@ function App() {
   const [dragging, setDragging] = useRecoilState(draggingState);
   const [toDos, setToDos] = useRecoilState(toDoState);
   const onDrangEnd = (info: DropResult) => {
+    console.log(info);
     const { destination, source, draggableId } = info;
     setDragging(false);
     if (!destination) return;
@@ -101,11 +102,21 @@ function App() {
   return (
     <DragDropContext onDragEnd={onDrangEnd} onDragStart={onDragStart}>
       <Wrapper>
-        <Boards>
-          {Object.keys(toDos).map((boardId) => (
-            <Board key={boardId} boardId={boardId} toDos={toDos[boardId]} />
-          ))}
-        </Boards>
+        <Droppable droppableId="boards" direction="horizontal">
+          {(magic) => (
+            <Boards ref={magic.innerRef} {...magic.droppableProps}>
+              {Object.keys(toDos).map((boardId, index) => (
+                <Board
+                  key={boardId}
+                  boardId={boardId}
+                  toDos={toDos[boardId]}
+                  index={index}
+                />
+              ))}
+              {magic.placeholder}
+            </Boards>
+          )}
+        </Droppable>
         <Droppable droppableId="delete">
           {(magic, snapshot) => (
             <DeleteArea
