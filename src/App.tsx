@@ -44,9 +44,8 @@ function App() {
   const [dragging, setDragging] = useRecoilState(draggingState);
   const [toDos, setToDos] = useRecoilState(toDoState);
   const onDrangEnd = (info: DropResult) => {
-    console.log(info);
     const { destination, source, type, draggableId } = info;
-    setDragging(false);
+    setDragging({ card: false, board: false });
     if (!destination) return;
     if (type === "board") {
       setToDos((oldBoards) => {
@@ -57,11 +56,29 @@ function App() {
         boardsKey.forEach((key) => {
           newBoards[key] = oldBoards[key];
         });
-        console.log(newBoards);
+        localStorage.setItem("localList", JSON.stringify(newBoards));
         return newBoards;
       });
     }
-    if (type === "card" && destination?.droppableId === "delete") {
+
+    if (
+      type === "board" &&
+      destination?.droppableId === "delete" &&
+      dragging.board === true
+    ) {
+      setToDos((allBoards) => {
+        const newBoards = { ...allBoards };
+        delete newBoards[draggableId];
+        localStorage.setItem("localList", JSON.stringify(newBoards));
+        return newBoards;
+      });
+    }
+
+    if (
+      type === "card" &&
+      destination?.droppableId === "delete" &&
+      dragging.card === true
+    ) {
       setToDos((allBoards) => {
         const sourceBoard = [...allBoards[source.droppableId]];
         sourceBoard.splice(source.index, 1);
@@ -73,6 +90,7 @@ function App() {
         return newBoards;
       });
     }
+
     if (type === "card" && destination?.droppableId === source.droppableId) {
       // Same Board Moving
       setToDos((allBoards) => {
@@ -110,7 +128,12 @@ function App() {
     }
   };
   const onDragStart = (info: DragStart) => {
-    setDragging(true);
+    if (info.type === "card") {
+      setDragging({ card: true, board: false });
+    }
+    if (info.type === "board") {
+      setDragging({ card: false, board: true });
+    }
   };
 
   return (
@@ -131,13 +154,25 @@ function App() {
             </Boards>
           )}
         </Droppable>
-        <Droppable droppableId="delete">
+        <Droppable droppableId="delete" type="card">
           {(magic, snapshot) => (
             <DeleteArea
               ref={magic.innerRef}
               {...magic.droppableProps}
               isDraggingOver={snapshot.isDraggingOver}
-              dragging={dragging}
+              dragging={dragging.card}
+            >
+              x
+            </DeleteArea>
+          )}
+        </Droppable>
+        <Droppable droppableId="delete" type="board">
+          {(magic, snapshot) => (
+            <DeleteArea
+              ref={magic.innerRef}
+              {...magic.droppableProps}
+              isDraggingOver={snapshot.isDraggingOver}
+              dragging={dragging.board}
             >
               x
             </DeleteArea>

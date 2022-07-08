@@ -26,5 +26,8 @@ export const toDoState = atom<IToDoState>({
 
 export const draggingState = atom({
   key: "isDragging",
-  default: false,
+  default: {
+    card: false,
+    board: false,
+  },
 });
