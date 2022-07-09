@@ -1,9 +1,11 @@
+import React from "react";
 import {
   DragDropContext,
   Droppable,
   DropResult,
   DragStart,
 } from "react-beautiful-dnd";
+import { useForm } from "react-hook-form";
 import { useRecoilState, useRecoilValue } from "recoil";
 import styled from "styled-components";
 import { draggingState, toDoState, IToDoState } from "./atom";
@@ -40,6 +42,12 @@ const DeleteArea = styled.div<{
   opacity: ${(props) => (props.dragging ? "1" : "0")};
 `;
 
+const Form = styled.form``;
+
+interface IForm {
+  board: string;
+}
+
 function App() {
   const [dragging, setDragging] = useRecoilState(draggingState);
   const [toDos, setToDos] = useRecoilState(toDoState);
@@ -51,11 +59,14 @@ function App() {
       setToDos((oldBoards) => {
         const boardsKey = Object.keys(oldBoards);
         const newBoards: IToDoState = {};
+        console.log(oldBoards, boardsKey);
         boardsKey.splice(source.index, 1);
         boardsKey.splice(destination.index, 0, draggableId);
+        console.log(boardsKey);
         boardsKey.forEach((key) => {
           newBoards[key] = oldBoards[key];
         });
+        console.log(oldBoards);
         localStorage.setItem("localList", JSON.stringify(newBoards));
         return newBoards;
       });
@@ -135,51 +146,69 @@ function App() {
       setDragging({ card: false, board: true });
     }
   };
-
+  const { register, handleSubmit } = useForm<IForm>();
+  const onVaild = (data: IForm) => {
+    setToDos((oldToDos) => {
+      const newToDos = { ...oldToDos };
+      newToDos[data.board + ""] = [];
+      localStorage.setItem("localList", JSON.stringify(newToDos));
+      return newToDos;
+    });
+  };
   return (
-    <DragDropContext onDragEnd={onDrangEnd} onDragStart={onDragStart}>
-      <Wrapper>
-        <Droppable droppableId="boards" direction="horizontal" type="board">
-          {(magic) => (
-            <Boards ref={magic.innerRef} {...magic.droppableProps}>
-              {Object.keys(toDos).map((boardId, index) => (
-                <Board
-                  key={boardId}
-                  boardId={boardId}
-                  toDos={toDos[boardId]}
-                  index={index}
-                />
-              ))}
-              {magic.placeholder}
-            </Boards>
-          )}
-        </Droppable>
-        <Droppable droppableId="delete" type="card">
-          {(magic, snapshot) => (
-            <DeleteArea
-              ref={magic.innerRef}
-              {...magic.droppableProps}
-              isDraggingOver={snapshot.isDraggingOver}
-              dragging={dragging.card}
-            >
-              x
-            </DeleteArea>
-          )}
-        </Droppable>
-        <Droppable droppableId="delete" type="board">
-          {(magic, snapshot) => (
-            <DeleteArea
-              ref={magic.innerRef}
-              {...magic.droppableProps}
-              isDraggingOver={snapshot.isDraggingOver}
-              dragging={dragging.board}
-            >
-              x
-            </DeleteArea>
-          )}
-        </Droppable>
-      </Wrapper>
-    </DragDropContext>
+    <>
+      <Form onSubmit={handleSubmit(onVaild)}>
+        <input
+          {...register("board", { required: true })}
+          type="text"
+          placeholder="Add Board"
+        ></input>
+        <button>Add</button>
+      </Form>
+      <DragDropContext onDragEnd={onDrangEnd} onDragStart={onDragStart}>
+        <Wrapper>
+          <Droppable droppableId="boards" direction="horizontal" type="board">
+            {(magic) => (
+              <Boards ref={magic.innerRef} {...magic.droppableProps}>
+                {Object.keys(toDos).map((boardId, index) => (
+                  <Board
+                    key={boardId}
+                    boardId={boardId}
+                    toDos={toDos[boardId]}
+                    index={index}
+                  />
+                ))}
+                {magic.placeholder}
+              </Boards>
+            )}
+          </Droppable>
+          <Droppable droppableId="delete" type="card">
+            {(magic, snapshot) => (
+              <DeleteArea
+                ref={magic.innerRef}
+                {...magic.droppableProps}
+                isDraggingOver={snapshot.isDraggingOver}
+                dragging={dragging.card}
+              >
+                x
+              </DeleteArea>
+            )}
+          </Droppable>
+          <Droppable droppableId="delete" type="board">
+            {(magic, snapshot) => (
+              <DeleteArea
+                ref={magic.innerRef}
+                {...magic.droppableProps}
+                isDraggingOver={snapshot.isDraggingOver}
+                dragging={dragging.board}
+              >
+                x
+              </DeleteArea>
+            )}
+          </Droppable>
+        </Wrapper>
+      </DragDropContext>
+    </>
   );
 }
 
