@@ -6,7 +6,7 @@ import {
   DragStart,
 } from "react-beautiful-dnd";
 import { useForm } from "react-hook-form";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { constSelector, useRecoilState, useRecoilValue } from "recoil";
 import styled from "styled-components";
 import { draggingState, toDoState, IToDoState } from "./atom";
 import Board from "./Components/Board";
@@ -146,18 +146,31 @@ function App() {
       setDragging({ card: false, board: true });
     }
   };
-  const { register, handleSubmit } = useForm<IForm>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setError,
+  } = useForm<IForm>();
   const onVaild = (data: IForm) => {
+    if (parseInt(data.board)) {
+      setError("board", {
+        message: "The name must not consist of only numbers.",
+      });
+      return;
+    }
     setToDos((oldToDos) => {
       const newToDos = { ...oldToDos };
-      newToDos[data.board + ""] = [];
+      newToDos[data.board] = [];
       localStorage.setItem("localList", JSON.stringify(newToDos));
+      console.log(newToDos);
       return newToDos;
     });
   };
   return (
     <>
       <Form onSubmit={handleSubmit(onVaild)}>
+        <span>{errors?.board?.message}</span>
         <input
           {...register("board", { required: true })}
           type="text"
